@@ -165,6 +165,16 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
         grid.appendChild(item);
+
+        // Hover speed effect
+        item.onmouseenter = () => {
+            const media = item.querySelector('video') || item.querySelector('audio');
+            if (media) media.playbackRate = 1.5;
+        };
+        item.onmouseleave = () => {
+            const media = item.querySelector('video') || item.querySelector('audio');
+            if (media) media.playbackRate = 1.0;
+        };
     }
 
     function openFullscreen(file) {
@@ -191,15 +201,22 @@ document.addEventListener('DOMContentLoaded', () => {
     window.onclick = (e) => { if (e.target === modal) closeBtn.onclick(); };
 
     playAllBtn.onclick = () => {
-        document.querySelectorAll('video, audio').forEach(m => {
+        const mediaElements = document.querySelectorAll('video, audio');
+        const iframes = document.querySelectorAll('iframe');
+
+        // Simultaneous start
+        mediaElements.forEach(m => {
             m.currentTime = 0;
-            m.play();
+            m.playbackRate = 1.0;
+            m.play().catch(e => console.error("Auto-play blocked:", e));
         });
-        document.querySelectorAll('iframe').forEach(i => {
+
+        iframes.forEach(i => {
             const src = i.dataset.src || i.src;
-            i.src = '';
+            i.src = 'about:blank';
             setTimeout(() => { i.src = src; }, 10);
         });
+
         document.querySelectorAll('.pause-btn').forEach(b => b.textContent = '⏸');
     };
 

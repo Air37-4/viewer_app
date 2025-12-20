@@ -6,3 +6,6 @@ env/
 venv/
 *.log
 .DS_Store
+dist/
+build/
+*.spec
