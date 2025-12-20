@@ -14,9 +14,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const zoomValue = document.getElementById('zoom-value');
     const changeFolderBtn = document.getElementById('change-folder-btn');
     const currentPathEl = document.getElementById('current-path');
+    const bgMusicSelect = document.getElementById('bg-music-select');
+    const toggleBgMusicBtn = document.getElementById('toggle-bg-music');
 
     let availableFiles = [];
     const addedFiles = new Set();
+    let globalAudio = new Audio();
+    globalAudio.loop = true;
 
     // Toggle Sidebar
     addBtn.onclick = () => sidebar.classList.toggle('open');
@@ -65,16 +69,49 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    // Background Music controls
+    toggleBgMusicBtn.onclick = () => {
+        if (!bgMusicSelect.value) return;
+
+        if (globalAudio.paused) {
+            if (!globalAudio.src || globalAudio.src.indexOf(encodeURIComponent(bgMusicSelect.value)) === -1) {
+                globalAudio.src = `/files/${bgMusicSelect.value}`;
+            }
+            globalAudio.play();
+            toggleBgMusicBtn.textContent = '⏸ Пауза';
+        } else {
+            globalAudio.pause();
+            toggleBgMusicBtn.textContent = '▶ Играть';
+        }
+    };
+
+    bgMusicSelect.onchange = () => {
+        globalAudio.pause();
+        toggleBgMusicBtn.textContent = '▶ Играть';
+    };
+
     async function fetchFileList() {
         try {
             const response = await fetch('/api/folder');
             const data = await response.json();
-            availableFiles = data.files || []; // Wait, the API returns {path: ...} now. I need to fix list_files
             currentPathEl.textContent = data.path;
 
             // Re-fetch actual files
             const filesResponse = await fetch('/api/files');
             availableFiles = await filesResponse.json();
+
+            // Populate music dropdown
+            const currentVal = bgMusicSelect.value;
+            bgMusicSelect.innerHTML = '<option value="">Без музыки</option>';
+            availableFiles.forEach(f => {
+                if (f.type === 'audio') {
+                    const opt = document.createElement('option');
+                    opt.value = f.name;
+                    opt.textContent = f.name;
+                    if (f.name === currentVal) opt.selected = true;
+                    bgMusicSelect.appendChild(opt);
+                }
+            });
 
             renderSidebar();
         } catch (error) {
@@ -199,16 +236,34 @@ document.addEventListener('DOMContentLoaded', () => {
 
         grid.appendChild(item);
 
-        // Hover effect: 2x center scale + 1.5x speed
-        item.onmouseenter = () => {
+        // Hover effect: center focus + 2x scale + 1.5x speed
+        let leaveTimeout;
+        item.onmouseenter = (e) => {
+            clearTimeout(leaveTimeout);
+            if (item.classList.contains('hovered')) return;
+
+            grid.classList.add('has-hovered');
             item.classList.add('hovered');
+
             const media = item.querySelector('video') || item.querySelector('audio');
-            if (media) media.playbackRate = 1.5;
+            if (media) {
+                media.playbackRate = 1.5;
+                // Double check to ensure speed sticks
+                setTimeout(() => { if (item.classList.contains('hovered')) media.playbackRate = 1.5; }, 100);
+            }
         };
-        item.onmouseleave = () => {
-            item.classList.remove('hovered');
-            const media = item.querySelector('video') || item.querySelector('audio');
-            if (media) media.playbackRate = 1.0;
+
+        item.onmouseleave = (e) => {
+            // Check if we really left the focus area
+            leaveTimeout = setTimeout(() => {
+                item.classList.remove('hovered');
+                grid.classList.remove('has-hovered');
+
+                const media = item.querySelector('video') || item.querySelector('audio');
+                if (media) {
+                    media.playbackRate = 1.0;
+                }
+            }, 50);
         };
     }
 
@@ -238,6 +293,13 @@ document.addEventListener('DOMContentLoaded', () => {
     playAllBtn.onclick = () => {
         const mediaElements = document.querySelectorAll('video, audio');
         const iframes = document.querySelectorAll('iframe');
+
+        // Play chosen background music
+        if (bgMusicSelect.value) {
+            globalAudio.src = `/files/${bgMusicSelect.value}`;
+            globalAudio.play();
+            toggleBgMusicBtn.textContent = '⏸ Пауза';
+        }
 
         mediaElements.forEach(m => {
             m.currentTime = 0;

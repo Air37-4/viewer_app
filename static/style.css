@@ -27,7 +27,9 @@ body {
     padding: 30px;
     max-width: 1400px;
     margin: 0 auto;
-    zoom: var(--zoom-factor);
+    transform: scale(var(--zoom-factor));
+    transform-origin: top center;
+    transition: transform 0.3s ease;
 }
 
 /* Floating Action Button */
@@ -158,6 +160,29 @@ body {
     background: rgba(255, 255, 255, 0.15);
 }
 
+.sidebar-music {
+    margin-bottom: 20px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--glass-border);
+}
+
+.sidebar-music p {
+    font-size: 0.8rem;
+    margin-bottom: 10px;
+    opacity: 0.7;
+}
+
+.music-select {
+    width: 100%;
+    background: rgba(0, 0, 0, 0.3);
+    color: white;
+    border: 1px solid var(--glass-border);
+    padding: 8px;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    outline: none;
+}
+
 .file-list {
     overflow-y: auto;
     flex-grow: 1;
@@ -192,15 +217,24 @@ body {
     border-radius: 12px;
     border: 1px solid var(--glass-border);
     overflow: hidden;
-    transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.4s ease, z-index 0s;
+    transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.4s ease;
     cursor: pointer;
     z-index: 1;
 }
 
-.grid-item:hover {
-    transform: scale(2.0);
-    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8);
-    z-index: 1000;
+/* Stable centering hover */
+.grid-item.hovered {
+    position: fixed !important;
+    top: 50% !important;
+    left: 50% !important;
+    width: 600px !important;
+    /* Larger base size for the centered view */
+    height: auto !important;
+    transform: translate(-50%, -50%) scale(1) !important;
+    /* Scale is handled by base size now to avoid jitter */
+    z-index: 10000 !important;
+    box-shadow: 0 50px 100px rgba(0, 0, 0, 1);
+    border: 2px solid var(--accent-color);
 }
 
 .preview-container {
@@ -223,18 +257,11 @@ video.no-bottom-crop {
     background: #000;
 }
 
-/* Specific class for centered hover */
-.grid-item.hovered {
-    position: fixed;
-    top: 50% !important;
-    left: 50% !important;
-    transform: translate(-50%, -50%) scale(2.0) !important;
-    width: 400px;
-    /* Base size for scaling */
-    aspect-ratio: 16 / 9;
-    z-index: 10000 !important;
-    box-shadow: 0 30px 100px rgba(0, 0, 0, 0.9);
-    transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.4s ease;
+/* Dim other items when one is hovered */
+.grid-container.has-hovered .grid-item:not(.hovered) {
+    opacity: 0.3;
+    filter: blur(2px);
+    pointer-events: none;
 }
 
 .item-overlay {
