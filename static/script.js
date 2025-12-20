@@ -160,10 +160,6 @@ document.addEventListener('DOMContentLoaded', () => {
             video.loop = true;
             video.autoplay = true;
             video.playsInline = true;
-            // Specific fix for the user's WhatsApp video
-            if (file.name.includes("WhatsApp Video 2025-12-20 at 06.36.48")) {
-                video.className = 'no-bottom-crop';
-            }
             preview.appendChild(video);
         } else {
             const audio = document.createElement('audio');

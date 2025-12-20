@@ -212,7 +212,8 @@ body {
 
 .grid-item {
     position: relative;
-    aspect-ratio: 16 / 9;
+    aspect-ratio: 1 / 1;
+    /* Changed to square for better fit of mixed media */
     background: var(--card-bg);
     border-radius: 12px;
     border: 1px solid var(--glass-border);
@@ -234,7 +235,9 @@ body {
     width: 100%;
     height: 100%;
     background: #000;
-    /* Black background for contain letterboxing */
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
 .preview-container iframe,
@@ -242,7 +245,6 @@ body {
     width: 100%;
     height: 100%;
     object-fit: contain;
-    /* Changed from cover to show FULL video */
     border: none;
 }
 
