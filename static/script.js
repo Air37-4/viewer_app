@@ -10,6 +10,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const fileListEl = document.getElementById('file-list');
     const fileUpload = document.getElementById('file-upload');
     const playAllBtn = document.getElementById('play-all-btn');
+    const zoomSlider = document.getElementById('zoom-slider');
+    const zoomValue = document.getElementById('zoom-value');
 
     let availableFiles = [];
     const addedFiles = new Set();
@@ -41,6 +43,13 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (error) {
             console.error('Upload error:', error);
         }
+    };
+
+    // Zoom Handling
+    zoomSlider.oninput = (e) => {
+        const val = e.target.value;
+        document.documentElement.style.setProperty('--zoom-factor', val);
+        zoomValue.textContent = `${Math.round(val * 100)}%`;
     };
 
     async function fetchFileList() {
@@ -94,6 +103,10 @@ document.addEventListener('DOMContentLoaded', () => {
             video.loop = true;
             video.autoplay = true;
             video.playsInline = true;
+            // Specific fix for the user's WhatsApp video
+            if (file.name.includes("WhatsApp Video 2025-12-20 at 06.36.48")) {
+                video.className = 'no-bottom-crop';
+            }
             preview.appendChild(video);
         } else {
             const audio = document.createElement('audio');
@@ -166,12 +179,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
         grid.appendChild(item);
 
-        // Hover speed effect
+        // Hover effect: 2x center scale + 1.5x speed
         item.onmouseenter = () => {
+            item.classList.add('hovered');
             const media = item.querySelector('video') || item.querySelector('audio');
             if (media) media.playbackRate = 1.5;
         };
         item.onmouseleave = () => {
+            item.classList.remove('hovered');
             const media = item.querySelector('video') || item.querySelector('audio');
             if (media) media.playbackRate = 1.0;
         };
@@ -204,7 +219,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const mediaElements = document.querySelectorAll('video, audio');
         const iframes = document.querySelectorAll('iframe');
 
-        // Simultaneous start
         mediaElements.forEach(m => {
             m.currentTime = 0;
             m.playbackRate = 1.0;

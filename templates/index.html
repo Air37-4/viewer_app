@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Лена - Галерея</title>
+    <title>Просмотрщик</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
 </head>
@@ -22,6 +22,11 @@
                 📂 Загрузить файл
                 <input type="file" id="file-upload" hidden>
             </label>
+        </div>
+        <div class="sidebar-zoom">
+            <p>Масштаб сетки</p>
+            <input type="range" id="zoom-slider" min="0.3" max="1.5" step="0.1" value="1">
+            <span id="zoom-value">100%</span>
         </div>
         <div id="file-list" class="file-list">
             <!-- Available files list -->

@@ -13,7 +13,7 @@ if __name__ == '__main__':
     flask_thread.start()
 
     # Create a pywebview window
-    webview.create_window('Лена - Галерея', 'http://127.0.0.1:5001', 
+    webview.create_window('Просмотрщик', 'http://127.0.0.1:5001', 
                           width=1400, height=900, 
                           min_size=(800, 600))
     webview.start()

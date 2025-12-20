@@ -4,6 +4,7 @@
     --accent-color: #ff3e00;
     --text-color: #ffffff;
     --glass-border: rgba(255, 255, 255, 0.08);
+    --zoom-factor: 1;
 }
 
 * {
@@ -26,6 +27,7 @@ body {
     padding: 30px;
     max-width: 1400px;
     margin: 0 auto;
+    zoom: var(--zoom-factor);
 }
 
 /* Floating Action Button */
@@ -112,6 +114,28 @@ body {
     opacity: 0.8;
 }
 
+.sidebar-zoom {
+    margin-bottom: 20px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--glass-border);
+}
+
+.sidebar-zoom p {
+    font-size: 0.8rem;
+    margin-bottom: 10px;
+    opacity: 0.7;
+}
+
+#zoom-slider {
+    width: 100%;
+    margin-bottom: 5px;
+}
+
+#zoom-value {
+    font-size: 0.8rem;
+    opacity: 0.5;
+}
+
 .file-list {
     overflow-y: auto;
     flex-grow: 1;
@@ -168,6 +192,27 @@ body {
     height: 100%;
     object-fit: cover;
     border: none;
+    object-position: top center;
+    /* Default to top center to favor showing more of the video */
+}
+
+video.no-bottom-crop {
+    object-fit: contain !important;
+    background: #000;
+}
+
+/* Specific class for centered hover */
+.grid-item.hovered {
+    position: fixed;
+    top: 50% !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%) scale(2.0) !important;
+    width: 400px;
+    /* Base size for scaling */
+    aspect-ratio: 16 / 9;
+    z-index: 10000 !important;
+    box-shadow: 0 30px 100px rgba(0, 0, 0, 0.9);
+    transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.4s ease;
 }
 
 .item-overlay {
@@ -290,9 +335,13 @@ body {
 }
 
 @media (max-width: 1000px) {
-    .grid-container { grid-template-columns: repeat(2, 1fr); }
+    .grid-container {
+        grid-template-columns: repeat(2, 1fr);
+    }
 }
 
 @media (max-width: 600px) {
-    .grid-container { grid-template-columns: 1fr; }
+    .grid-container {
+        grid-template-columns: 1fr;
+    }
 }

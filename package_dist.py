@@ -18,7 +18,8 @@ def package():
         "--noconfirm",
         "--onefile",
         "--windowed",
-        "--name", "VideoGallery",
+        "--name", "Viewer",
+        "--icon", "app_icon.ico",
         "--add-data", "templates;templates",
         "--add-data", "static;static",
         "desktop_app.py"
