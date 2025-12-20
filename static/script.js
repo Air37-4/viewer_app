@@ -232,7 +232,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         grid.appendChild(item);
 
-        // Simple stable magnification (1.25x)
+        // Simple stable magnification (1.5x / 50%)
         item.onmouseenter = () => {
             item.classList.add('hovered');
             const media = item.querySelector('video') || item.querySelector('audio');

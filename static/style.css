@@ -223,11 +223,11 @@ body {
     z-index: 1;
 }
 
-/* Subtle Magnification (1.25x) */
+/* Moderate Magnification (1.5x / 50%) */
 .grid-item.hovered {
-    transform: scale(1.25) !important;
+    transform: scale(1.5) !important;
     z-index: 10000 !important;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
+    box-shadow: 0 25px 70px rgba(0, 0, 0, 0.8);
     border: 2px solid var(--accent-color);
 }
 
