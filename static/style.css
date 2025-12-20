@@ -136,6 +136,28 @@ body {
     opacity: 0.5;
 }
 
+.sidebar-folder {
+    margin-bottom: 20px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--glass-border);
+}
+
+.btn-sidebar {
+    width: 100%;
+    background: rgba(255, 255, 255, 0.05);
+    color: white;
+    border: 1px solid var(--glass-border);
+    padding: 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    transition: background 0.2s;
+}
+
+.btn-sidebar:hover {
+    background: rgba(255, 255, 255, 0.15);
+}
+
 .file-list {
     overflow-y: auto;
     flex-grow: 1;

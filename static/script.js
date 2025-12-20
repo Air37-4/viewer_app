@@ -12,6 +12,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const playAllBtn = document.getElementById('play-all-btn');
     const zoomSlider = document.getElementById('zoom-slider');
     const zoomValue = document.getElementById('zoom-value');
+    const changeFolderBtn = document.getElementById('change-folder-btn');
+    const currentPathEl = document.getElementById('current-path');
 
     let availableFiles = [];
     const addedFiles = new Set();
@@ -52,10 +54,28 @@ document.addEventListener('DOMContentLoaded', () => {
         zoomValue.textContent = `${Math.round(val * 100)}%`;
     };
 
+    // Folder Change
+    changeFolderBtn.onclick = async () => {
+        if (window.pywebview && window.pywebview.api) {
+            const newPath = await window.pywebview.api.select_folder();
+            if (newPath) {
+                currentPathEl.textContent = newPath;
+                await fetchFileList();
+            }
+        }
+    };
+
     async function fetchFileList() {
         try {
-            const response = await fetch('/api/files');
-            availableFiles = await response.json();
+            const response = await fetch('/api/folder');
+            const data = await response.json();
+            availableFiles = data.files || []; // Wait, the API returns {path: ...} now. I need to fix list_files
+            currentPathEl.textContent = data.path;
+
+            // Re-fetch actual files
+            const filesResponse = await fetch('/api/files');
+            availableFiles = await filesResponse.json();
+
             renderSidebar();
         } catch (error) {
             console.error('Error fetching file list:', error);

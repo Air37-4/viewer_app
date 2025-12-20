@@ -4,10 +4,36 @@ from flask import Flask, render_template, jsonify, send_from_directory, request
 
 app = Flask(__name__)
 
-# Correct path to the folder with files
-BASE_DIR = r"C:\Users\air37\Downloads\Лена"
+CONFIG_FILE = "config.txt"
+
+def get_base_dir():
+    if os.path.exists(CONFIG_FILE):
+        try:
+            with open(CONFIG_FILE, "r", encoding="utf-8") as f:
+                path = f.read().strip()
+                if os.path.exists(path):
+                    return path
+        except:
+            pass
+    return r"C:\Users\air37\Downloads\Лена"
+
+BASE_DIR = get_base_dir()
 
 ALLOWED_EXTENSIONS = {'.html', '.mp4', '.webm', '.ogg', '.mp3', '.wav', '.avi', '.mov', '.mkv', '.m4v'}
+
+@app.route('/api/folder', methods=['GET', 'POST'])
+def manage_folder():
+    global BASE_DIR
+    if request.method == 'POST':
+        data = request.json
+        new_path = data.get('path')
+        if new_path and os.path.exists(new_path):
+            with open(CONFIG_FILE, "w", encoding="utf-8") as f:
+                f.write(new_path)
+            BASE_DIR = new_path
+            return jsonify({"status": "success", "path": BASE_DIR})
+        return jsonify({"status": "error", "message": "Invalid path"}), 400
+    return jsonify({"path": BASE_DIR})
 
 @app.route('/')
 def index():
