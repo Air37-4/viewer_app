@@ -1,0 +1,207 @@
+document.addEventListener('DOMContentLoaded', () => {
+    const grid = document.getElementById('grid');
+    const modal = document.getElementById('modal');
+    const modalContent = document.getElementById('modal-content');
+    const closeBtn = document.querySelector('.close');
+
+    const addBtn = document.getElementById('add-btn');
+    const sidebar = document.getElementById('sidebar');
+    const closeSidebarBtn = document.getElementById('close-sidebar');
+    const fileListEl = document.getElementById('file-list');
+    const fileUpload = document.getElementById('file-upload');
+    const playAllBtn = document.getElementById('play-all-btn');
+
+    let availableFiles = [];
+    const addedFiles = new Set();
+
+    // Toggle Sidebar
+    addBtn.onclick = () => sidebar.classList.toggle('open');
+    closeSidebarBtn.onclick = () => sidebar.classList.remove('open');
+
+    // File Upload
+    fileUpload.onchange = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const formData = new FormData();
+        formData.append('file', file);
+
+        try {
+            const response = await fetch('/api/upload', {
+                method: 'POST',
+                body: formData
+            });
+            const result = await response.json();
+            if (result.status === 'success') {
+                await fetchFileList();
+                alert('Файл загружен успешно!');
+            } else {
+                alert(`Ошибка: ${result.message}`);
+            }
+        } catch (error) {
+            console.error('Upload error:', error);
+        }
+    };
+
+    async function fetchFileList() {
+        try {
+            const response = await fetch('/api/files');
+            availableFiles = await response.json();
+            renderSidebar();
+        } catch (error) {
+            console.error('Error fetching file list:', error);
+        }
+    }
+
+    function renderSidebar() {
+        fileListEl.innerHTML = '';
+        availableFiles.forEach(file => {
+            const el = document.createElement('div');
+            el.className = 'file-item';
+            const typeLabel = { 'html': 'HTML', 'video': 'MP4', 'audio': 'MP3' }[file.type] || 'FILE';
+            el.innerHTML = `
+                <span>${file.name}</span>
+                <span class="type-icon">${typeLabel}</span>
+            `;
+            el.onclick = () => {
+                if (addedFiles.has(file.name)) return alert('Уже добавлено!');
+                addToFileGrid(file);
+                sidebar.classList.remove('open');
+            };
+            fileListEl.appendChild(el);
+        });
+    }
+
+    function addToFileGrid(file) {
+        addedFiles.add(file.name);
+
+        const item = document.createElement('div');
+        item.className = 'grid-item';
+        item.id = `item-${file.name.replace(/\s+/g, '-')}`;
+
+        const preview = document.createElement('div');
+        preview.className = 'preview-container';
+
+        if (file.type === 'html') {
+            const iframe = document.createElement('iframe');
+            iframe.src = `/files/${file.name}`;
+            iframe.scrolling = 'no';
+            preview.appendChild(iframe);
+        } else if (file.type === 'video') {
+            const video = document.createElement('video');
+            video.src = `/files/${file.name}`;
+            video.muted = true;
+            video.loop = true;
+            video.autoplay = true;
+            video.playsInline = true;
+            preview.appendChild(video);
+        } else {
+            const audio = document.createElement('audio');
+            audio.src = `/files/${file.name}`;
+            audio.loop = true;
+            audio.autoplay = true;
+            preview.innerHTML = '<div style="display:flex;justify-content:center;align-items:center;height:100%;font-size:2rem;">🎵</div>';
+            preview.appendChild(audio);
+        }
+
+        const overlay = document.createElement('div');
+        overlay.className = 'item-overlay';
+        overlay.innerHTML = `
+            <span class="file-name">${file.name}</span>
+            <div class="item-controls">
+                ${(file.type !== 'html') ? '<button class="btn-small unmute-btn">🔇</button>' : ''}
+                <button class="btn-small pause-btn">⏸</button>
+                <button class="btn-small btn-danger delete-btn">Убрать</button>
+            </div>
+        `;
+
+        item.appendChild(preview);
+        item.appendChild(overlay);
+
+        item.onclick = (e) => {
+            if (e.target.tagName === 'BUTTON') return;
+            openFullscreen(file);
+        };
+
+        const pauseBtn = overlay.querySelector('.pause-btn');
+        pauseBtn.onclick = (e) => {
+            e.stopPropagation();
+            if (file.type === 'html') {
+                const iframe = preview.querySelector('iframe');
+                if (iframe.src !== 'about:blank') {
+                    iframe.dataset.src = iframe.src;
+                    iframe.src = 'about:blank';
+                    pauseBtn.textContent = '▶';
+                } else {
+                    iframe.src = iframe.dataset.src;
+                    pauseBtn.textContent = '⏸';
+                }
+            } else {
+                const media = preview.querySelector('video') || preview.querySelector('audio');
+                if (media.paused) {
+                    media.play();
+                    pauseBtn.textContent = '⏸';
+                } else {
+                    media.pause();
+                    pauseBtn.textContent = '▶';
+                }
+            }
+        };
+
+        if (file.type !== 'html') {
+            const unmuteBtn = overlay.querySelector('.unmute-btn');
+            unmuteBtn.onclick = (e) => {
+                e.stopPropagation();
+                const media = preview.querySelector('video') || preview.querySelector('audio');
+                media.muted = !media.muted;
+                unmuteBtn.textContent = media.muted ? '🔇' : '🔊';
+            };
+        }
+
+        overlay.querySelector('.delete-btn').onclick = (e) => {
+            e.stopPropagation();
+            item.remove();
+            addedFiles.delete(file.name);
+        };
+
+        grid.appendChild(item);
+    }
+
+    function openFullscreen(file) {
+        modalContent.innerHTML = '';
+        let element;
+        if (file.type === 'html') {
+            element = document.createElement('iframe');
+            element.src = `/files/${file.name}`;
+        } else {
+            element = document.createElement('video');
+            element.src = `/files/${file.name}`;
+            element.controls = true;
+            element.autoplay = true;
+        }
+        modalContent.appendChild(element);
+        modal.style.display = 'block';
+    }
+
+    closeBtn.onclick = () => {
+        modal.style.display = 'none';
+        modalContent.innerHTML = '';
+    };
+
+    window.onclick = (e) => { if (e.target === modal) closeBtn.onclick(); };
+
+    playAllBtn.onclick = () => {
+        document.querySelectorAll('video, audio').forEach(m => {
+            m.currentTime = 0;
+            m.play();
+        });
+        document.querySelectorAll('iframe').forEach(i => {
+            const src = i.dataset.src || i.src;
+            i.src = '';
+            setTimeout(() => { i.src = src; }, 10);
+        });
+        document.querySelectorAll('.pause-btn').forEach(b => b.textContent = '⏸');
+    };
+
+    fetchFileList();
+});

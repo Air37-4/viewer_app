@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Лена - Галерея</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <button id="add-btn" class="floating-btn">+</button>
+
+    <div id="sidebar" class="sidebar">
+        <div class="sidebar-header">
+            <h3>Добавить контент</h3>
+            <button id="close-sidebar">&times;</button>
+        </div>
+        <div class="sidebar-upload">
+            <label for="file-upload" class="upload-label">
+                📂 Загрузить файл
+                <input type="file" id="file-upload" hidden>
+            </label>
+        </div>
+        <div id="file-list" class="file-list">
+            <!-- Available files list -->
+        </div>
+    </div>
+
+    <main id="grid" class="grid-container">
+        <!-- Files will be selected and added here -->
+    </main>
+
+    <button id="play-all-btn" class="subtle-footer-btn">▶ Запустить всё</button>
+
+    <!-- Fullscreen Modal -->
+    <div id="modal" class="modal">
+        <span class="close">&times;</span>
+        <div class="modal-content-wrapper">
+            <div id="modal-content"></div>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div id="delete-modal" class="confirm-modal">
+        <div class="confirm-content">
+            <p>Вы уверены, что хотите удалить этот файл?</p>
+            <div class="confirm-buttons">
+                <button id="confirm-delete" class="btn-danger">Удалить</button>
+                <button id="cancel-delete" class="btn-secondary">Отмена</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+
+</html>
