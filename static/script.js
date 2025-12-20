@@ -236,34 +236,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
         grid.appendChild(item);
 
-        // Hover effect: center focus + 2x scale + 1.5x speed
-        let leaveTimeout;
-        item.onmouseenter = (e) => {
-            clearTimeout(leaveTimeout);
-            if (item.classList.contains('hovered')) return;
-
-            grid.classList.add('has-hovered');
+        // Simple stable magnification
+        item.onmouseenter = () => {
             item.classList.add('hovered');
-
             const media = item.querySelector('video') || item.querySelector('audio');
-            if (media) {
-                media.playbackRate = 1.5;
-                // Double check to ensure speed sticks
-                setTimeout(() => { if (item.classList.contains('hovered')) media.playbackRate = 1.5; }, 100);
-            }
+            if (media) media.playbackRate = 1.5;
         };
 
-        item.onmouseleave = (e) => {
-            // Check if we really left the focus area
-            leaveTimeout = setTimeout(() => {
-                item.classList.remove('hovered');
-                grid.classList.remove('has-hovered');
-
-                const media = item.querySelector('video') || item.querySelector('audio');
-                if (media) {
-                    media.playbackRate = 1.0;
-                }
-            }, 50);
+        item.onmouseleave = () => {
+            item.classList.remove('hovered');
+            const media = item.querySelector('video') || item.querySelector('audio');
+            if (media) media.playbackRate = 1.0;
         };
     }
 

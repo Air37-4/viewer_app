@@ -222,18 +222,11 @@ body {
     z-index: 1;
 }
 
-/* Stable centering hover */
+/* Stable Magnification (In-Place) */
 .grid-item.hovered {
-    position: fixed !important;
-    top: 50% !important;
-    left: 50% !important;
-    width: 600px !important;
-    /* Larger base size for the centered view */
-    height: auto !important;
-    transform: translate(-50%, -50%) scale(1) !important;
-    /* Scale is handled by base size now to avoid jitter */
+    transform: scale(2.0) !important;
     z-index: 10000 !important;
-    box-shadow: 0 50px 100px rgba(0, 0, 0, 1);
+    box-shadow: 0 30px 100px rgba(0, 0, 0, 1);
     border: 2px solid var(--accent-color);
 }
 
@@ -257,12 +250,7 @@ video.no-bottom-crop {
     background: #000;
 }
 
-/* Dim other items when one is hovered */
-.grid-container.has-hovered .grid-item:not(.hovered) {
-    opacity: 0.3;
-    filter: blur(2px);
-    pointer-events: none;
-}
+/* Removing dimming to prevent layout interference */
 
 .item-overlay {
     position: absolute;
@@ -278,7 +266,8 @@ video.no-bottom-crop {
     transition: opacity 0.3s ease;
 }
 
-.grid-item:hover .item-overlay {
+/* Overlay sync with scale */
+.grid-item.hovered .item-overlay {
     opacity: 1;
 }
 
