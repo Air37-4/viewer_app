@@ -13,8 +13,50 @@ document.addEventListener('DOMContentLoaded', () => {
     const fileListEl = document.getElementById('file-list');
     const fileUpload = document.getElementById('file-upload');
 
+    // Link inputs
+    const linkUrlInput = document.getElementById('link-url');
+    const linkNameInput = document.getElementById('link-name');
+    const addLinkBtn = document.getElementById('add-link-btn');
+
     let availableFiles = [];
     const addedFiles = new Set();
+
+    // Add Link Button
+    addLinkBtn.onclick = async () => {
+        const url = linkUrlInput.value.trim();
+        const name = linkNameInput.value.trim();
+
+        if (!url || !name) {
+            alert('Пожалуйста, введите URL и название');
+            return;
+        }
+
+        try {
+            const response = await fetch('/api/add_link', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ url, name })
+            });
+            const result = await response.json();
+
+            if (result.status === 'success') {
+                linkUrlInput.value = '';
+                linkNameInput.value = '';
+                await fetchFileList();
+
+                // Auto add
+                const newFile = availableFiles.find(f => f.name === result.filename);
+                if (newFile) addToFileGrid(newFile, true);
+
+                alert('Ссылка добавлена!');
+            } else {
+                alert('Ошибка: ' + result.message);
+            }
+        } catch (error) {
+            console.error('Error adding link:', error);
+            alert('Ошибка сети');
+        }
+    };
 
     // Load saved session
     const savedSession = localStorage.getItem('mediaPlayerSession');
