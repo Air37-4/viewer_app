@@ -3,34 +3,66 @@ document.addEventListener('DOMContentLoaded', () => {
     const modal = document.getElementById('modal');
     const modalContent = document.getElementById('modal-content');
     const closeBtn = document.querySelector('.close');
+    const welcomeScreen = document.getElementById('welcome-screen');
+    const playAllBtn = document.getElementById('play-all-btn');
+    const dropZone = document.getElementById('drop-zone');
 
     const addBtn = document.getElementById('add-btn');
     const sidebar = document.getElementById('sidebar');
     const closeSidebarBtn = document.getElementById('close-sidebar');
     const fileListEl = document.getElementById('file-list');
     const fileUpload = document.getElementById('file-upload');
-    const playAllBtn = document.getElementById('play-all-btn');
-    const zoomSlider = document.getElementById('zoom-slider');
-    const zoomValue = document.getElementById('zoom-value');
-    const changeFolderBtn = document.getElementById('change-folder-btn');
-    const currentPathEl = document.getElementById('current-path');
-    const bgMusicSelect = document.getElementById('bg-music-select');
-    const toggleBgMusicBtn = document.getElementById('toggle-bg-music');
 
     let availableFiles = [];
     const addedFiles = new Set();
-    let globalAudio = new Audio();
-    globalAudio.loop = true;
+
+    // Load saved session
+    const savedSession = localStorage.getItem('mediaPlayerSession');
+    let sessionFiles = savedSession ? JSON.parse(savedSession) : [];
 
     // Toggle Sidebar
     addBtn.onclick = () => sidebar.classList.toggle('open');
     closeSidebarBtn.onclick = () => sidebar.classList.remove('open');
 
-    // File Upload
-    fileUpload.onchange = async (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
+    // Drag & Drop
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        document.body.addEventListener(eventName, preventDefaults, false);
+    });
 
+    function preventDefaults(e) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+
+    ['dragenter', 'dragover'].forEach(eventName => {
+        document.body.addEventListener(eventName, () => {
+            dropZone.classList.add('active');
+        });
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+        dropZone.addEventListener(eventName, () => {
+            dropZone.classList.remove('active');
+        });
+    });
+
+    document.body.addEventListener('drop', async (e) => {
+        const files = e.dataTransfer.files;
+        for (let file of files) {
+            await uploadFile(file);
+        }
+    });
+
+    // File Upload - Multiple files support
+    fileUpload.onchange = async (e) => {
+        const files = e.target.files;
+        for (let file of files) {
+            await uploadFile(file);
+        }
+        fileUpload.value = ''; // Reset input
+    };
+
+    async function uploadFile(file) {
         const formData = new FormData();
         formData.append('file', file);
 
@@ -42,78 +74,63 @@ document.addEventListener('DOMContentLoaded', () => {
             const result = await response.json();
             if (result.status === 'success') {
                 await fetchFileList();
-                alert('Файл загружен успешно!');
-            } else {
-                alert(`Ошибка: ${result.message}`);
+                // Auto-add the uploaded file to grid
+                const uploadedFile = availableFiles.find(f => f.name === file.name);
+                if (uploadedFile && !addedFiles.has(uploadedFile.name)) {
+                    addToFileGrid(uploadedFile, true);
+                }
             }
         } catch (error) {
             console.error('Upload error:', error);
         }
-    };
+    }
 
-    // Zoom Handling
-    zoomSlider.oninput = (e) => {
-        const val = e.target.value;
-        document.documentElement.style.setProperty('--zoom-factor', val);
-        zoomValue.textContent = `${Math.round(val * 100)}%`;
-    };
+    // Keyboard Shortcuts
+    document.addEventListener('keydown', (e) => {
+        // Space - toggle playback
+        if (e.code === 'Space' && !e.target.matches('input, textarea')) {
+            e.preventDefault();
+            toggleAllPlayback();
+        }
 
-    // Folder Change
-    changeFolderBtn.onclick = async () => {
-        if (window.pywebview && window.pywebview.api) {
-            const newPath = await window.pywebview.api.select_folder();
-            if (newPath) {
-                currentPathEl.textContent = newPath;
-                await fetchFileList();
+        // Escape - close modal or sidebar
+        if (e.code === 'Escape') {
+            if (modal.style.display === 'block') {
+                closeBtn.onclick();
+            } else if (sidebar.classList.contains('open')) {
+                sidebar.classList.remove('open');
             }
         }
-    };
+    });
 
-    // Background Music controls
-    toggleBgMusicBtn.onclick = () => {
-        if (!bgMusicSelect.value) return;
+    function toggleAllPlayback() {
+        const mediaElements = document.querySelectorAll('video, audio');
+        const allPaused = Array.from(mediaElements).every(m => m.paused);
 
-        if (globalAudio.paused) {
-            if (!globalAudio.src || globalAudio.src.indexOf(encodeURIComponent(bgMusicSelect.value)) === -1) {
-                globalAudio.src = `/files/${bgMusicSelect.value}`;
+        mediaElements.forEach(m => {
+            if (allPaused) {
+                m.play().catch(() => { });
+            } else {
+                m.pause();
             }
-            globalAudio.play();
-            toggleBgMusicBtn.textContent = '⏸ Пауза';
-        } else {
-            globalAudio.pause();
-            toggleBgMusicBtn.textContent = '▶ Играть';
-        }
-    };
-
-    bgMusicSelect.onchange = () => {
-        globalAudio.pause();
-        toggleBgMusicBtn.textContent = '▶ Играть';
-    };
+        });
+    }
 
     async function fetchFileList() {
         try {
-            const response = await fetch('/api/folder');
-            const data = await response.json();
-            currentPathEl.textContent = data.path;
-
-            // Re-fetch actual files
             const filesResponse = await fetch('/api/files');
             availableFiles = await filesResponse.json();
-
-            // Populate music dropdown
-            const currentVal = bgMusicSelect.value;
-            bgMusicSelect.innerHTML = '<option value="">Без музыки</option>';
-            availableFiles.forEach(f => {
-                if (f.type === 'audio') {
-                    const opt = document.createElement('option');
-                    opt.value = f.name;
-                    opt.textContent = f.name;
-                    if (f.name === currentVal) opt.selected = true;
-                    bgMusicSelect.appendChild(opt);
-                }
-            });
-
             renderSidebar();
+
+            // Restore session on first load
+            if (sessionFiles.length > 0 && addedFiles.size === 0) {
+                sessionFiles.forEach(fileName => {
+                    const file = availableFiles.find(f => f.name === fileName);
+                    if (file && !addedFiles.has(file.name)) {
+                        addToFileGrid(file, false);
+                    }
+                });
+            }
         } catch (error) {
             console.error('Error fetching file list:', error);
         }
@@ -123,30 +140,58 @@ document.addEventListener('DOMContentLoaded', () => {
         fileListEl.innerHTML = '';
         availableFiles.forEach(file => {
             const el = document.createElement('div');
-            el.className = 'file-item';
+            el.className = 'file-item' + (addedFiles.has(file.name) ? ' added' : '');
             const typeLabel = { 'html': 'HTML', 'video': 'MP4', 'audio': 'MP3' }[file.type] || 'FILE';
             el.innerHTML = `
                 <span>${file.name}</span>
                 <span class="type-icon">${typeLabel}</span>
             `;
             el.onclick = () => {
-                if (addedFiles.has(file.name)) return alert('Уже добавлено!');
-                addToFileGrid(file);
-                sidebar.classList.remove('open');
+                if (addedFiles.has(file.name)) return;
+                addToFileGrid(file, true);
+                el.classList.add('added');
             };
             fileListEl.appendChild(el);
         });
     }
 
-    function addToFileGrid(file) {
+    function saveSession() {
+        localStorage.setItem('mediaPlayerSession', JSON.stringify([...addedFiles]));
+    }
+
+    function updateUI() {
+        if (addedFiles.size > 0) {
+            welcomeScreen.classList.add('hidden');
+            playAllBtn.style.display = 'block';
+        } else {
+            welcomeScreen.classList.remove('hidden');
+            playAllBtn.style.display = 'none';
+        }
+        renderSidebar(); // Update sidebar to show added state
+    }
+
+    function addToFileGrid(file, save = true) {
+        if (addedFiles.has(file.name)) return; // Prevent duplicates
+
         addedFiles.add(file.name);
+        if (save) saveSession();
 
         const item = document.createElement('div');
         item.className = 'grid-item';
-        item.id = `item-${file.name.replace(/\s+/g, '-')}`;
+        item.dataset.filename = file.name;
 
         const preview = document.createElement('div');
         preview.className = 'preview-container';
+
+        // Type Badge
+        const typeEmoji = { 'html': '🌐', 'video': '📹', 'audio': '🎵' }[file.type] || '📄';
+        const badge = document.createElement('div');
+        badge.className = 'type-badge';
+        badge.textContent = typeEmoji;
+
+        // Progress Bar (for video/audio)
+        const progressBar = document.createElement('div');
+        progressBar.className = 'progress-bar';
 
         if (file.type === 'html') {
             const iframe = document.createElement('iframe');
@@ -160,90 +205,71 @@ document.addEventListener('DOMContentLoaded', () => {
             video.loop = true;
             video.autoplay = true;
             video.playsInline = true;
+
+            video.ontimeupdate = () => {
+                if (video.duration) {
+                    const percent = (video.currentTime / video.duration) * 100;
+                    progressBar.style.width = `${percent}%`;
+                }
+            };
+
             preview.appendChild(video);
         } else {
             const audio = document.createElement('audio');
             audio.src = `/files/${file.name}`;
             audio.loop = true;
             audio.autoplay = true;
-            preview.innerHTML = '<div style="display:flex;justify-content:center;align-items:center;height:100%;font-size:2rem;">🎵</div>';
+
+            audio.ontimeupdate = () => {
+                if (audio.duration) {
+                    const percent = (audio.currentTime / audio.duration) * 100;
+                    progressBar.style.width = `${percent}%`;
+                }
+            };
+
+            preview.innerHTML = '<div style="display:flex;justify-content:center;align-items:center;height:100%;font-size:3rem;">🎵</div>';
             preview.appendChild(audio);
         }
 
         const overlay = document.createElement('div');
         overlay.className = 'item-overlay';
-        overlay.innerHTML = `
-            <span class="file-name">${file.name}</span>
-            <div class="item-controls">
-                ${(file.type !== 'html') ? '<button class="btn-small unmute-btn">🔇</button>' : ''}
-                <button class="btn-small pause-btn">⏸</button>
-                <button class="btn-small btn-danger delete-btn">Убрать</button>
-            </div>
-        `;
+        overlay.innerHTML = `<span class="file-name">${file.name}</span>`;
 
         item.appendChild(preview);
+        item.appendChild(badge);
+        item.appendChild(progressBar);
         item.appendChild(overlay);
 
-        item.onclick = (e) => {
-            if (e.target.tagName === 'BUTTON') return;
-            openFullscreen(file);
+        // Double click to fullscreen
+        item.ondblclick = () => openFullscreen(file);
+
+        // Right click to remove
+        item.oncontextmenu = (e) => {
+            e.preventDefault();
+            removeItem(item, file.name);
         };
 
-        const pauseBtn = overlay.querySelector('.pause-btn');
-        pauseBtn.onclick = (e) => {
-            e.stopPropagation();
-            if (file.type === 'html') {
-                const iframe = preview.querySelector('iframe');
-                if (iframe.src !== 'about:blank') {
-                    iframe.dataset.src = iframe.src;
-                    iframe.src = 'about:blank';
-                    pauseBtn.textContent = '▶';
-                } else {
-                    iframe.src = iframe.dataset.src;
-                    pauseBtn.textContent = '⏸';
-                }
-            } else {
-                const media = preview.querySelector('video') || preview.querySelector('audio');
-                if (media.paused) {
-                    media.play();
-                    pauseBtn.textContent = '⏸';
-                } else {
-                    media.pause();
-                    pauseBtn.textContent = '▶';
-                }
-            }
-        };
-
-        if (file.type !== 'html') {
-            const unmuteBtn = overlay.querySelector('.unmute-btn');
-            unmuteBtn.onclick = (e) => {
-                e.stopPropagation();
-                const media = preview.querySelector('video') || preview.querySelector('audio');
-                media.muted = !media.muted;
-                unmuteBtn.textContent = media.muted ? '🔇' : '🔊';
-            };
-        }
-
-        overlay.querySelector('.delete-btn').onclick = (e) => {
-            e.stopPropagation();
-            item.remove();
-            addedFiles.delete(file.name);
-        };
-
-        grid.appendChild(item);
-
-        // Simple stable magnification (1.5x / 50%)
+        // Hover effect: speed up video
         item.onmouseenter = () => {
-            item.classList.add('hovered');
             const media = item.querySelector('video') || item.querySelector('audio');
             if (media) media.playbackRate = 1.5;
         };
 
         item.onmouseleave = () => {
-            item.classList.remove('hovered');
             const media = item.querySelector('video') || item.querySelector('audio');
             if (media) media.playbackRate = 1.0;
         };
+
+        grid.appendChild(item);
+        updateUI();
+    }
+
+    function removeItem(item, fileName) {
+        item.remove();
+        addedFiles.delete(fileName);
+        sessionFiles = sessionFiles.filter(f => f !== fileName);
+        saveSession();
+        updateUI();
     }
 
     function openFullscreen(file) {
@@ -267,18 +293,13 @@ document.addEventListener('DOMContentLoaded', () => {
         modalContent.innerHTML = '';
     };
 
-    window.onclick = (e) => { if (e.target === modal) closeBtn.onclick(); };
+    window.onclick = (e) => {
+        if (e.target === modal) closeBtn.onclick();
+    };
 
     playAllBtn.onclick = () => {
         const mediaElements = document.querySelectorAll('video, audio');
-        const iframes = document.querySelectorAll('iframe');
-
-        // Play chosen background music
-        if (bgMusicSelect.value) {
-            globalAudio.src = `/files/${bgMusicSelect.value}`;
-            globalAudio.play();
-            toggleBgMusicBtn.textContent = '⏸ Пауза';
-        }
+        const iframes = document.querySelectorAll('.grid-item iframe');
 
         mediaElements.forEach(m => {
             m.currentTime = 0;
@@ -287,12 +308,10 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         iframes.forEach(i => {
-            const src = i.dataset.src || i.src;
+            const src = i.src;
             i.src = 'about:blank';
             setTimeout(() => { i.src = src; }, 10);
         });
-
-        document.querySelectorAll('.pause-btn').forEach(b => b.textContent = '⏸');
     };
 
     fetchFileList();

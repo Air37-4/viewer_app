@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Просмотрщик</title>
+    <title>Медиа Плеер</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
 </head>
@@ -14,33 +14,40 @@
 
     <div id="sidebar" class="sidebar">
         <div class="sidebar-header">
-            <h3>Добавить контент</h3>
+            <h3>Добавить файлы</h3>
             <button id="close-sidebar">&times;</button>
         </div>
         <div class="sidebar-upload">
             <label for="file-upload" class="upload-label">
-                📂 Загрузить файл
-                <input type="file" id="file-upload" hidden>
+                📂 Загрузить файлы
+                <input type="file" id="file-upload" hidden accept="video/*,audio/*,.html" multiple>
             </label>
         </div>
-        <div class="sidebar-zoom">
-            <p>Масштаб сетки</p>
-            <input type="range" id="zoom-slider" min="0.3" max="1.5" step="0.1" value="1">
-            <span id="zoom-value">100%</span>
-        </div>
-        <div class="sidebar-folder">
-            <button id="change-folder-btn" class="btn-sidebar">📁 Сменить папку</button>
-            <p id="current-path" style="font-size: 0.6rem; opacity: 0.4; margin-top: 5px; word-break: break-all;"></p>
-        </div>
-        <div class="sidebar-music">
-            <p>🎵 Фоновая музыка</p>
-            <select id="bg-music-select" class="music-select">
-                <option value="">Без музыки</option>
-            </select>
-            <button id="toggle-bg-music" class="btn-sidebar" style="margin-top: 10px;">▶ Играть</button>
-        </div>
+        <p class="sidebar-hint">Или выберите из папки:</p>
         <div id="file-list" class="file-list">
             <!-- Available files list -->
+        </div>
+    </div>
+
+    <!-- Drop Zone Overlay -->
+    <div id="drop-zone" class="drop-zone">
+        <div class="drop-zone-content">
+            <span class="drop-icon">📂</span>
+            <p>Отпустите файлы для загрузки</p>
+        </div>
+    </div>
+
+    <!-- Welcome Screen -->
+    <div id="welcome-screen" class="welcome-screen">
+        <div class="welcome-content">
+            <h1>🎬 Медиа Плеер</h1>
+            <p class="welcome-subtitle">Простой проигрыватель для видео, аудио и HTML-анимаций</p>
+            <div class="welcome-formats">
+                <span>📹 MP4</span>
+                <span>🎵 MP3</span>
+                <span>🌐 HTML</span>
+            </div>
+            <p class="welcome-hint">Нажмите <span class="highlight">+</span> или перетащите файлы сюда</p>
         </div>
     </div>
 
@@ -48,24 +55,13 @@
         <!-- Files will be selected and added here -->
     </main>
 
-    <button id="play-all-btn" class="subtle-footer-btn">▶ Запустить всё</button>
+    <button id="play-all-btn" class="subtle-footer-btn" style="display: none;">▶ Запустить всё</button>
 
     <!-- Fullscreen Modal -->
     <div id="modal" class="modal">
         <span class="close">&times;</span>
         <div class="modal-content-wrapper">
             <div id="modal-content"></div>
-        </div>
-    </div>
-
-    <!-- Delete Confirmation Modal -->
-    <div id="delete-modal" class="confirm-modal">
-        <div class="confirm-content">
-            <p>Вы уверены, что хотите удалить этот файл?</p>
-            <div class="confirm-buttons">
-                <button id="confirm-delete" class="btn-danger">Удалить</button>
-                <button id="cancel-delete" class="btn-secondary">Отмена</button>
-            </div>
         </div>
     </div>
 
