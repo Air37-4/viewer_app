@@ -24,7 +24,16 @@ def get_base_dir():
 BASE_DIR = get_base_dir()
 
 # Allow all common media formats
-ALLOWED_EXTENSIONS = {'.html', '.htm', '.mp4', '.webm', '.ogg', '.mp3', '.wav', '.avi', '.mov', '.mkv', '.m4v', '.flv', '.wmv', '.m4a', '.aac', '.flac'}
+ALLOWED_EXTENSIONS = {
+    # Video
+    '.mp4', '.webm', '.ogg', '.avi', '.mov', '.mkv', '.m4v', '.flv', '.wmv',
+    # Audio
+    '.mp3', '.wav', '.m4a', '.aac', '.flac',
+    # Images
+    '.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg', '.bmp', '.ico',
+    # Web
+    '.html', '.htm'
+}
 
 @app.route('/api/folder', methods=['GET', 'POST'])
 def manage_folder():
@@ -52,8 +61,10 @@ def list_files():
         if ext in ALLOWED_EXTENSIONS:
             if ext == '.html':
                 ftype = 'html'
-            elif ext in {'.mp3', '.wav'}:
+            elif ext in {'.mp3', '.wav', '.m4a', '.aac', '.flac'}:
                 ftype = 'audio'
+            elif ext in {'.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg', '.bmp', '.ico'}:
+                ftype = 'image'
             else:
                 ftype = 'video'
             files.append({
@@ -102,82 +113,6 @@ def upload_file():
         print(f"Upload error: {e}")
         return jsonify({'status': 'error', 'message': str(e)}), 500
 
-@app.route('/api/add_link', methods=['POST'])
-def add_link():
-    data = request.json
-    url = data.get('url')
-    name = data.get('name')
-    
-    if not url or not name:
-        return jsonify({'status': 'error', 'message': 'Missing URL or Name'}), 400
-        
-    # Sanitize filename
-    safe_name = "".join([c for c in name if c.isalpha() or c.isdigit() or c in (' ', '-', '_')]).strip()
-    if not safe_name:
-        safe_name = "link"
-    
-    filename = f"{safe_name}.html"
-    file_path = os.path.join(BASE_DIR, filename)
-    
-    # Handle YouTube links
-    embed_url = url
-    if "youtube.com/watch" in url:
-        try:
-            video_id = url.split("v=")[1].split("&")[0]
-            embed_url = f"https://www.youtube.com/embed/{video_id}?autoplay=1&mute=1&loop=1&playlist={video_id}"
-        except:
-            pass
-    elif "youtu.be/" in url:
-        try:
-            video_id = url.split("youtu.be/")[1].split("?")[0]
-            embed_url = f"https://www.youtube.com/embed/{video_id}?autoplay=1&mute=1&loop=1&playlist={video_id}"
-        except:
-            pass
-            
-    # Create HTML wrapper
-    html_content = f"""
-<!DOCTYPE html>
-<html>
-<head>
-<style>
-    body {{ margin: 0; background: #000; display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden; }}
-    iframe, video {{ width: 100%; height: 100%; border: none; }}
-</style>
-</head>
-<body>
-    <iframe src="{embed_url}" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>
-</body>
-</html>
-    """
-    
-    # If it looks like a direct video file, use video tag instead
-    if url.lower().endswith(('.mp4', '.webm', '.ogg', '.mov')):
-        html_content = f"""
-<!DOCTYPE html>
-<html>
-<head>
-<style>
-    body {{ margin: 0; background: #000; display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden; }}
-    video {{ width: 100%; height: 100%; object-fit: contain; }}
-</style>
-</head>
-<body>
-    <video src="{url}" autoplay loop muted playsinline controls></video>
-</body>
-</html>
-        """
-        
-    try:
-        # Create BASE_DIR if it doesn't exist
-        if not os.path.exists(BASE_DIR):
-            os.makedirs(BASE_DIR)
-            
-        with open(file_path, "w", encoding="utf-8") as f:
-            f.write(html_content)
-            
-        return jsonify({'status': 'success', 'filename': filename})
-    except Exception as e:
-        return jsonify({'status': 'error', 'message': str(e)}), 500
 
 if __name__ == '__main__':
     print("Starting Flask server...")

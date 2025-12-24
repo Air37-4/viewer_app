@@ -20,17 +20,20 @@
         <div class="sidebar-upload">
             <label for="file-upload" class="upload-label">
                 📂 Загрузить файлы
-                <input type="file" id="file-upload" hidden accept="video/*,audio/*,.html" multiple>
+                <input type="file" id="file-upload" hidden
+                    accept="video/*,audio/*,image/*,.html,.htm,.png,.jpg,.jpeg,.gif,.webp,.svg,.bmp,.ico" multiple>
             </label>
         </div>
 
-        <div class="sidebar-link">
-            <p>🔗 Добавить ссылку</p>
-            <div class="link-input-group">
-                <input type="text" id="link-url" placeholder="URL (YouTube, MP4...)">
-                <input type="text" id="link-name" placeholder="Название">
-                <button id="add-link-btn" class="btn-sidebar">Добавить</button>
-            </div>
+        <div class="sidebar-folder">
+            <button id="change-folder-btn" class="btn-sidebar">📂 Выбрать папку</button>
+            <p id="current-path" style="font-size: 0.6rem; opacity: 0.4; margin-top: 5px; word-break: break-all;"></p>
+        </div>
+
+        <div class="sidebar-zoom">
+            <p>Масштаб сетки</p>
+            <input type="range" id="zoom-slider" min="0.1" max="1.5" step="0.1" value="1">
+            <span id="zoom-value">100%</span>
         </div>
 
         <p class="sidebar-hint">Или выберите из папки:</p>

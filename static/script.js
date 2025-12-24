@@ -13,50 +13,39 @@ document.addEventListener('DOMContentLoaded', () => {
     const fileListEl = document.getElementById('file-list');
     const fileUpload = document.getElementById('file-upload');
 
-    // Link inputs
-    const linkUrlInput = document.getElementById('link-url');
-    const linkNameInput = document.getElementById('link-name');
-    const addLinkBtn = document.getElementById('add-link-btn');
+    // Controls
+    const changeFolderBtn = document.getElementById('change-folder-btn');
+    const currentPathEl = document.getElementById('current-path');
+    const zoomSlider = document.getElementById('zoom-slider');
+    const zoomValue = document.getElementById('zoom-value');
 
     let availableFiles = [];
     const addedFiles = new Set();
 
-    // Add Link Button
-    addLinkBtn.onclick = async () => {
-        const url = linkUrlInput.value.trim();
-        const name = linkNameInput.value.trim();
+    // Zoom Handling
+    if (zoomSlider) {
+        zoomSlider.oninput = (e) => {
+            const val = e.target.value;
+            // Using transform for scale
+            document.documentElement.style.setProperty('--zoom-factor', val);
+            zoomValue.textContent = `${Math.round(val * 100)}%`;
+        };
+    }
 
-        if (!url || !name) {
-            alert('Пожалуйста, введите URL и название');
-            return;
-        }
-
-        try {
-            const response = await fetch('/api/add_link', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ url, name })
-            });
-            const result = await response.json();
-
-            if (result.status === 'success') {
-                linkUrlInput.value = '';
-                linkNameInput.value = '';
-                await fetchFileList();
-
-                // Auto add
-                const newFile = availableFiles.find(f => f.name === result.filename);
-                if (newFile) addToFileGrid(newFile, true);
-
-                alert('Ссылка добавлена!');
+    // Folder Change
+    if (changeFolderBtn) {
+        changeFolderBtn.onclick = async () => {
+            if (window.pywebview && window.pywebview.api) {
+                const newPath = await window.pywebview.api.select_folder();
+                if (newPath) {
+                    currentPathEl.textContent = newPath;
+                    await fetchFileList();
+                }
             } else {
-                alert('Ошибка: ' + result.message);
+                alert("Эта функция доступна только в приложении");
             }
-        } catch (error) {
-            console.error('Error adding link:', error);
-            alert('Ошибка сети');
-        }
-    };
+        };
+    }
 
     // Load saved session
     const savedSession = localStorage.getItem('mediaPlayerSession');
@@ -160,6 +149,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function fetchFileList() {
         try {
+            const folderRes = await fetch('/api/folder');
+            const folderData = await folderRes.json();
+            if (currentPathEl) currentPathEl.textContent = folderData.path;
+
             const filesResponse = await fetch('/api/files');
             availableFiles = await filesResponse.json();
             renderSidebar();
@@ -183,7 +176,7 @@ document.addEventListener('DOMContentLoaded', () => {
         availableFiles.forEach(file => {
             const el = document.createElement('div');
             el.className = 'file-item' + (addedFiles.has(file.name) ? ' added' : '');
-            const typeLabel = { 'html': 'HTML', 'video': 'MP4', 'audio': 'MP3' }[file.type] || 'FILE';
+            const typeLabel = { 'html': 'HTML', 'video': 'MP4', 'audio': 'MP3', 'image': 'IMG' }[file.type] || 'FILE';
             el.innerHTML = `
                 <span>${file.name}</span>
                 <span class="type-icon">${typeLabel}</span>
@@ -226,7 +219,7 @@ document.addEventListener('DOMContentLoaded', () => {
         preview.className = 'preview-container';
 
         // Type Badge
-        const typeEmoji = { 'html': '🌐', 'video': '📹', 'audio': '🎵' }[file.type] || '📄';
+        const typeEmoji = { 'html': '🌐', 'video': '📹', 'audio': '🎵', 'image': '🖼️' }[file.type] || '📄';
         const badge = document.createElement('div');
         badge.className = 'type-badge';
         badge.textContent = typeEmoji;
@@ -238,7 +231,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (file.type === 'html') {
             const iframe = document.createElement('iframe');
             iframe.src = `/files/${file.name}`;
-            iframe.scrolling = 'no';
+            iframe.scrolling = 'no'; // Disable scrollbars
             preview.appendChild(iframe);
         } else if (file.type === 'video') {
             const video = document.createElement('video');
@@ -256,6 +249,13 @@ document.addEventListener('DOMContentLoaded', () => {
             };
 
             preview.appendChild(video);
+        } else if (file.type === 'image') {
+            const img = document.createElement('img');
+            img.src = `/files/${file.name}`;
+            img.style.width = '100%';
+            img.style.height = '100%';
+            img.style.objectFit = 'contain';
+            preview.appendChild(img);
         } else {
             const audio = document.createElement('audio');
             audio.src = `/files/${file.name}`;
@@ -275,7 +275,53 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const overlay = document.createElement('div');
         overlay.className = 'item-overlay';
-        overlay.innerHTML = `<span class="file-name">${file.name}</span>`;
+
+        const nameSpan = document.createElement('span');
+        nameSpan.className = 'file-name';
+        nameSpan.textContent = file.name;
+        overlay.appendChild(nameSpan);
+
+        const controlsGroup = document.createElement('div');
+        controlsGroup.className = 'controls-group';
+
+        // Play/Pause Button (for Media)
+        if (file.type === 'video' || file.type === 'audio') {
+            const playBtn = document.createElement('button');
+            playBtn.className = 'control-btn play';
+            playBtn.innerHTML = '⏸'; // Auto-plays by default
+            playBtn.title = "Play/Pause";
+
+            playBtn.onclick = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const media = item.querySelector('video') || item.querySelector('audio');
+                if (media.paused) {
+                    media.play();
+                    playBtn.innerHTML = '⏸';
+                } else {
+                    media.pause();
+                    playBtn.innerHTML = '▶';
+                }
+            };
+            controlsGroup.appendChild(playBtn);
+        }
+
+        // Delete Button
+        const deleteBtn = document.createElement('button');
+        deleteBtn.className = 'control-btn delete';
+        deleteBtn.innerHTML = '🗑'; // Trash icon
+        deleteBtn.title = "Remove";
+
+        deleteBtn.onclick = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (confirm(`Убрать "${file.name}" из списка?`)) {
+                removeItem(item, file.name);
+            }
+        };
+        controlsGroup.appendChild(deleteBtn);
+
+        overlay.appendChild(controlsGroup);
 
         item.appendChild(preview);
         item.appendChild(badge);
@@ -285,16 +331,11 @@ document.addEventListener('DOMContentLoaded', () => {
         // Double click to fullscreen
         item.ondblclick = () => openFullscreen(file);
 
-        // Right click to remove
-        item.oncontextmenu = (e) => {
-            e.preventDefault();
-            removeItem(item, file.name);
-        };
-
-        // Hover effect: speed up video
+        // Hover effect: speed up video + scale handled in CSS
         item.onmouseenter = () => {
             const media = item.querySelector('video') || item.querySelector('audio');
-            if (media) media.playbackRate = 1.5;
+            // Only speed up if it's playing
+            if (media && !media.paused) media.playbackRate = 1.5;
         };
 
         item.onmouseleave = () => {
@@ -320,6 +361,12 @@ document.addEventListener('DOMContentLoaded', () => {
         if (file.type === 'html') {
             element = document.createElement('iframe');
             element.src = `/files/${file.name}`;
+        } else if (file.type === 'image') {
+            element = document.createElement('img');
+            element.src = `/files/${file.name}`;
+            element.style.width = '100%';
+            element.style.height = '100%';
+            element.style.objectFit = 'contain';
         } else {
             element = document.createElement('video');
             element.src = `/files/${file.name}`;

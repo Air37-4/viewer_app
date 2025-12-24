@@ -4,6 +4,7 @@
     --accent-color: #ff4500;
     --text-color: #ffffff;
     --glass-border: rgba(255, 255, 255, 0.1);
+    --zoom-factor: 1;
 }
 
 * {
@@ -117,13 +118,112 @@ body {
 
 /* Grid */
 .grid-container {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    /* Align triggers to left */
     gap: 15px;
     padding: 20px;
     max-width: 1800px;
     margin: 0 auto;
+    /* Zoom logic handled via font-size or card width rather than transform for better reflow */
+    /* But since we use transform in JS, let's stick to it but ensure container centers */
+    transform: scale(var(--zoom-factor));
+    transform-origin: top left;
+    width: 100%;
 }
+
+/* Grid Items */
+.grid-item {
+    position: relative;
+    width: 250px;
+    height: 290px;
+    /* Increased height for footer */
+    background: var(--card-bg);
+    border-radius: 10px;
+    border: 1px solid var(--glass-border);
+    overflow: hidden;
+    transition: transform 0.3s ease, box-shadow 0.3s ease, z-index 0s;
+    cursor: pointer;
+    animation: fadeIn 0.4s ease;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+/* ... existing keyframes ... */
+
+.grid-item:hover {
+    z-index: 100;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    /* Removed scale on hover to avoid layout jumping with controls */
+    border-color: var(--accent-color);
+}
+
+/* ... preview styles ... */
+
+.item-overlay {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 5px 10px;
+    background: rgba(0, 0, 0, 0.85);
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    height: 40px;
+    backdrop-filter: blur(4px);
+}
+
+/* Removed hover overlay logic */
+
+.file-name {
+    font-size: 0.7rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    opacity: 0.7;
+    flex-grow: 1;
+    margin-right: 10px;
+}
+
+.controls-group {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.control-btn {
+    background: none;
+    border: none;
+    color: white;
+    cursor: pointer;
+    font-size: 1rem;
+    padding: 4px;
+    line-height: 1;
+    opacity: 0.7;
+    transition: transform 0.2s, opacity 0.2s, color 0.2s;
+    border-radius: 4px;
+}
+
+.control-btn:hover {
+    transform: scale(1.2);
+    opacity: 1;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.control-btn.delete:hover {
+    color: #ff4444;
+}
+
+.control-btn.play:hover {
+    color: #44ff44;
+}
+
+/* ... rest ... */
 
 /* Floating Action Button */
 .floating-btn {
@@ -224,46 +324,46 @@ body {
     margin-top: 20px;
 }
 
-.sidebar-link {
-    border-bottom: 1px solid var(--glass-border);
-    padding-bottom: 20px;
+.sidebar-folder {
     margin-bottom: 20px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--glass-border);
 }
 
-.sidebar-link p {
-    font-size: 0.85rem;
+.sidebar-zoom {
+    margin-bottom: 20px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--glass-border);
+}
+
+.sidebar-zoom p {
+    font-size: 0.8rem;
     margin-bottom: 10px;
-    opacity: 0.8;
+    opacity: 0.7;
 }
 
-.link-input-group {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
+#zoom-slider {
+    width: 100%;
+    margin-bottom: 5px;
+    accent-color: var(--accent-color);
 }
 
-.link-input-group input {
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid var(--glass-border);
-    padding: 8px 12px;
-    border-radius: 6px;
-    color: white;
-    font-size: 0.85rem;
-    outline: none;
-}
-
-.link-input-group input:focus {
-    border-color: var(--accent-color);
+#zoom-value {
+    font-size: 0.8rem;
+    opacity: 0.5;
+    display: block;
+    text-align: right;
 }
 
 .btn-sidebar {
+    width: 100%;
     background: rgba(255, 255, 255, 0.1);
     color: white;
     border: none;
-    padding: 8px;
-    border-radius: 6px;
+    padding: 10px;
+    border-radius: 8px;
     cursor: pointer;
-    font-size: 0.85rem;
+    font-size: 0.9rem;
     transition: background 0.2s;
 }
 
@@ -332,18 +432,21 @@ body {
 }
 
 .grid-item:hover {
-    transform: scale(1.5);
-    z-index: 100;
+    z-index: 1000;
+    transform: scale(1.4);
     box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8);
+    border-color: var(--accent-color);
 }
 
 .preview-container {
     width: 100%;
-    height: 100%;
+    height: 250px;
+    /* Fixed height for media */
     background: #000;
     display: flex;
     justify-content: center;
     align-items: center;
+    flex-shrink: 0;
 }
 
 .preview-container iframe,
@@ -374,36 +477,83 @@ body {
 /* Video Progress Bar */
 .progress-bar {
     position: absolute;
-    bottom: 0;
+    bottom: 40px;
+    /* Height of the footer */
     left: 0;
     height: 3px;
     background: var(--accent-color);
     width: 0%;
     transition: width 0.1s linear;
+    z-index: 5;
 }
 
 /* Simple overlay - just filename */
-.item-overlay {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    padding: 8px;
-    background: linear-gradient(transparent, rgba(0, 0, 0, 0.9));
-    opacity: 0;
-    transition: opacity 0.3s ease;
-}
-
-.grid-item:hover .item-overlay {
-    opacity: 1;
-}
-
 .file-name {
     font-size: 0.7rem;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
     opacity: 0.8;
+    flex-grow: 1;
+}
+
+/* Footer controls - no longer an overlay */
+.item-overlay {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 10px;
+    background: #1a1a1a;
+    height: 40px;
+    border-top: 1px solid var(--glass-border);
+    opacity: 1;
+    /* Always visible */
+    gap: 10px;
+    width: 100%;
+    position: relative;
+    /* Not absolute */
+}
+
+.file-name {
+    font-size: 0.75rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    opacity: 0.9;
+    flex-grow: 1;
+    color: #fff;
+    margin-right: 5px;
+}
+
+.playback-control {
+    background: none;
+    border: none;
+    color: white;
+    cursor: pointer;
+    font-size: 1.2rem;
+    padding: 0;
+    line-height: 1;
+    opacity: 0.9;
+    transition: transform 0.2s;
+}
+
+.playback-control:hover {
+    transform: scale(1.2);
+    color: var(--accent-color);
+}
+
+/* Allow scrolling in iframes */
+/* Allow scrolling in iframes but hide scrollbar visual */
+.preview-container iframe {
+    pointer-events: auto;
+    /* Enable interaction */
+    overflow: hidden;
+    /* Hide scrollbars */
+}
+
+/* Hide scrollbar for Chrome, Safari and Opera */
+.preview-container iframe::-webkit-scrollbar {
+    display: none;
 }
 
 /* Play All Button */
@@ -454,10 +604,12 @@ body {
 }
 
 #modal-content iframe,
-#modal-content video {
+#modal-content video,
+#modal-content img {
     width: 100%;
     height: 100%;
     border: none;
+    object-fit: contain;
 }
 
 .close {
