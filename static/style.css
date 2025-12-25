@@ -104,6 +104,29 @@ body {
     }
 }
 
+
+/* Telegram Link */
+.telegram-link {
+    display: inline-block;
+    margin-top: 25px;
+    color: rgba(255, 255, 255, 0.6);
+    text-decoration: none;
+    font-size: 0.85rem;
+    padding: 8px 16px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    transition: all 0.3s ease;
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.telegram-link:hover {
+    background: rgba(0, 136, 204, 0.2);
+    border-color: rgba(0, 136, 204, 0.5);
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0, 136, 204, 0.2);
+}
+
 /* Drop Zone */
 .drop-zone {
     position: fixed;
