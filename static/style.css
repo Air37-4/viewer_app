@@ -158,13 +158,14 @@ body {
 /* Grid Items */
 .grid-item {
     position: relative;
-    width: 250px;
+    width: calc(20% - 12px);
+    /* 5 items per row exactly */
     height: 290px;
-    /* Increased height for footer */
     background: var(--card-bg);
     border-radius: 10px;
     border: 1px solid var(--glass-border);
-    overflow: hidden;
+    overflow: visible;
+    /* Changed to visible for hover scale */
     transition: transform 0.3s ease, box-shadow 0.3s ease, z-index 0s;
     cursor: pointer;
     animation: fadeIn 0.4s ease;
@@ -173,12 +174,10 @@ body {
     flex-direction: column;
 }
 
-/* ... existing keyframes ... */
-
 .grid-item:hover {
-    z-index: 100;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-    /* Removed scale on hover to avoid layout jumping with controls */
+    z-index: 1000;
+    transform: scale(1.4);
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8);
     border-color: var(--accent-color);
 }
 
@@ -433,36 +432,7 @@ body {
 }
 
 /* Grid Items */
-.grid-item {
-    position: relative;
-    aspect-ratio: 1 / 1;
-    background: var(--card-bg);
-    border-radius: 10px;
-    border: 1px solid var(--glass-border);
-    overflow: hidden;
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-    cursor: pointer;
-    animation: fadeIn 0.4s ease;
-}
-
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-        transform: scale(0.9);
-    }
-
-    to {
-        opacity: 1;
-        transform: scale(1);
-    }
-}
-
-.grid-item:hover {
-    z-index: 1000;
-    transform: scale(1.4);
-    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8);
-    border-color: var(--accent-color);
-}
+/* Duplicate grid-item block removed */
 
 .preview-container {
     width: 100%;
