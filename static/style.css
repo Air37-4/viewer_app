@@ -32,6 +32,9 @@ body {
     align-items: center;
     z-index: 10;
     pointer-events: none;
+    /* Canva-like modern dark gradient */
+    background: radial-gradient(circle at top right, #2a2a2a, #000000);
+    background-size: cover;
 }
 
 .welcome-screen.hidden {
@@ -80,6 +83,25 @@ body {
     border-radius: 50%;
     font-weight: 600;
     font-size: 0.8rem;
+    box-shadow: 0 0 15px var(--accent-color);
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(255, 69, 0, 0.7);
+    }
+
+    70% {
+        transform: scale(1.1);
+        box-shadow: 0 0 0 10px rgba(255, 69, 0, 0);
+    }
+
+    100% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(255, 69, 0, 0);
+    }
 }
 
 /* Drop Zone */
@@ -252,18 +274,22 @@ body {
 .sidebar {
     position: fixed;
     top: 0;
-    right: -300px;
-    width: 300px;
+    right: -280px;
+    /* Hidden state matches width */
+    width: 280px;
+    /* Slightly more compact */
     height: 100%;
-    background: rgba(10, 10, 10, 0.95);
+    background: rgba(15, 15, 15, 0.85);
+    /* More transparent/lighter */
     backdrop-filter: blur(20px);
     z-index: 2000;
-    box-shadow: -5px 0 20px rgba(0, 0, 0, 0.5);
+    box-shadow: -5px 0 30px rgba(0, 0, 0, 0.6);
     transition: right 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-    padding: 20px;
+    padding: 15px;
+    /* Reduced padding */
     display: flex;
     flex-direction: column;
-    border-left: 1px solid var(--glass-border);
+    border-left: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .sidebar.open {
