@@ -15,11 +15,11 @@ def get_base_dir():
                     return path
         except:
             pass
-    # Fallback to Downloads folder if Лена doesn't exist
-    default_path = r"C:\Users\air37\Downloads\Лена"
-    if os.path.exists(default_path):
-        return default_path
-    return os.path.expanduser("~\\Downloads")
+    # Use a dedicated folder in Documents to ensure it starts empty
+    docs_dir = os.path.join(os.path.expanduser("~"), "Documents", "MediaViewer_Files")
+    if not os.path.exists(docs_dir):
+        os.makedirs(docs_dir)
+    return docs_dir
 
 BASE_DIR = get_base_dir()
 
