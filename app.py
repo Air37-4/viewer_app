@@ -4,7 +4,7 @@ from flask import Flask, render_template, jsonify, send_from_directory, request
 
 app = Flask(__name__)
 
-CONFIG_FILE = "config.txt"
+CONFIG_FILE = "viewer_config_v2.txt"
 
 def get_base_dir():
     if os.path.exists(CONFIG_FILE):
