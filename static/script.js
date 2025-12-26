@@ -47,13 +47,27 @@ document.addEventListener('DOMContentLoaded', () => {
                     // Update path display
                     currentPathEl.textContent = newPath;
                     
-                    // Give server a moment to update the folder
-                    await new Promise(resolve => setTimeout(resolve, 200));
+                    // Give server a moment to update the folder, then verify it was updated
+                    await new Promise(resolve => setTimeout(resolve, 300));
                     
-                    // Fetch files from new folder and auto-add them
-                    console.log('Fetching file list...');
-                    await fetchFileList(true);
-                    console.log('Files fetched:', availableFiles.length);
+                    // Verify folder was updated on server
+                    const verifyRes = await fetch('/api/folder');
+                    const verifyData = await verifyRes.json();
+                    console.log('Verifying folder update - server path:', verifyData.path, 'selected path:', newPath);
+                    
+                    // Normalize paths for comparison (handle different path separators)
+                    const serverPath = verifyData.path.replace(/\\/g, '/');
+                    const selectedPath = newPath.replace(/\\/g, '/');
+                    
+                    if (serverPath === selectedPath || serverPath.endsWith(selectedPath) || selectedPath.endsWith(serverPath)) {
+                        // Fetch files from new folder and auto-add them
+                        console.log('Folder verified, fetching file list...');
+                        await fetchFileList(true);
+                        console.log('Files fetched:', availableFiles.length);
+                    } else {
+                        console.error('Folder mismatch! Server:', serverPath, 'Selected:', selectedPath);
+                        alert('Ошибка: папка не обновилась на сервере');
+                    }
                 }
             } else {
                 alert("Эта функция доступна только в приложении");
