@@ -176,12 +176,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 // When explicitly requested (folder selection), add all files
                 console.log('Auto-adding files, count:', availableFiles.length);
                 availableFiles.forEach(file => {
+                    console.log('Processing file:', file.name, 'already added?', addedFiles.has(file.name));
                     if (!addedFiles.has(file.name)) {
-                        console.log('Adding file:', file.name);
+                        console.log('Adding file to grid:', file.name);
                         addToFileGrid(file);
                     }
                 });
-                console.log('Total files added:', addedFiles.size);
+                console.log('Total files added:', addedFiles.size, 'Grid items:', grid.children.length);
             } else if (addedFiles.size === 0 && availableFiles.length > 0) {
                 // On first load with existing folder, also add all files
                 availableFiles.forEach(file => {
