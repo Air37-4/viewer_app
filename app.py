@@ -15,9 +15,18 @@ def get_base_dir():
                     return path
         except:
             pass
-    # Use a dedicated folder in Documents to ensure it starts empty
+    # Use a dedicated folder in Documents and clear it on each start
     docs_dir = os.path.join(os.path.expanduser("~"), "Documents", "MediaViewer_Files")
-    if not os.path.exists(docs_dir):
+    if os.path.exists(docs_dir):
+        # Clear all files in the folder
+        for filename in os.listdir(docs_dir):
+            file_path = os.path.join(docs_dir, filename)
+            try:
+                if os.path.isfile(file_path):
+                    os.remove(file_path)
+            except Exception as e:
+                print(f"Error removing file {file_path}: {e}")
+    else:
         os.makedirs(docs_dir)
     return docs_dir
 

@@ -39,7 +39,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 const newPath = await window.pywebview.api.select_folder();
                 if (newPath) {
                     currentPathEl.textContent = newPath;
-                    await fetchFileList();
+                    // Clear grid and added files before loading new folder
+                    grid.innerHTML = '';
+                    addedFiles.clear();
+                    // Automatically add all files from the folder
+                    await fetchFileList(true);
                 }
             } else {
                 alert("Эта функция доступна только в приложении");
@@ -47,9 +51,7 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     }
 
-    // Load saved session
-    const savedSession = localStorage.getItem('mediaPlayerSession');
-    let sessionFiles = savedSession ? JSON.parse(savedSession) : [];
+    // No session saving - always start fresh
 
     // Toggle Sidebar
     addBtn.onclick = () => sidebar.classList.toggle('open');
@@ -108,7 +110,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Auto-add the uploaded file to grid
                 const uploadedFile = availableFiles.find(f => f.name === file.name);
                 if (uploadedFile && !addedFiles.has(uploadedFile.name)) {
-                    addToFileGrid(uploadedFile, true);
+                    addToFileGrid(uploadedFile);
                 }
             }
         } catch (error) {
@@ -147,7 +149,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    async function fetchFileList() {
+    async function fetchFileList(autoAddFiles = false) {
         try {
             const folderRes = await fetch('/api/folder');
             const folderData = await folderRes.json();
@@ -157,12 +159,11 @@ document.addEventListener('DOMContentLoaded', () => {
             availableFiles = await filesResponse.json();
             renderSidebar();
 
-            // Restore session on first load
-            if (sessionFiles.length > 0 && addedFiles.size === 0) {
-                sessionFiles.forEach(fileName => {
-                    const file = availableFiles.find(f => f.name === fileName);
-                    if (file && !addedFiles.has(file.name)) {
-                        addToFileGrid(file, false);
+            // Auto-add all files if requested (when folder is selected or on first load with existing folder)
+            if (autoAddFiles || (addedFiles.size === 0 && availableFiles.length > 0)) {
+                availableFiles.forEach(file => {
+                    if (!addedFiles.has(file.name)) {
+                        addToFileGrid(file);
                     }
                 });
             }
@@ -183,16 +184,13 @@ document.addEventListener('DOMContentLoaded', () => {
             `;
             el.onclick = () => {
                 if (addedFiles.has(file.name)) return;
-                addToFileGrid(file, true);
+                addToFileGrid(file);
                 el.classList.add('added');
             };
             fileListEl.appendChild(el);
         });
     }
 
-    function saveSession() {
-        localStorage.setItem('mediaPlayerSession', JSON.stringify([...addedFiles]));
-    }
 
     function updateUI() {
         if (addedFiles.size > 0) {
@@ -205,11 +203,10 @@ document.addEventListener('DOMContentLoaded', () => {
         renderSidebar(); // Update sidebar to show added state
     }
 
-    function addToFileGrid(file, save = true) {
+    function addToFileGrid(file) {
         if (addedFiles.has(file.name)) return; // Prevent duplicates
 
         addedFiles.add(file.name);
-        if (save) saveSession();
 
         const item = document.createElement('div');
         item.className = 'grid-item';
@@ -350,8 +347,6 @@ document.addEventListener('DOMContentLoaded', () => {
     function removeItem(item, fileName) {
         item.remove();
         addedFiles.delete(fileName);
-        sessionFiles = sessionFiles.filter(f => f !== fileName);
-        saveSession();
         updateUI();
     }
 
