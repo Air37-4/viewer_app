@@ -38,11 +38,14 @@ document.addEventListener('DOMContentLoaded', () => {
             if (window.pywebview && window.pywebview.api) {
                 const newPath = await window.pywebview.api.select_folder();
                 if (newPath) {
-                    currentPathEl.textContent = newPath;
                     // Clear grid and added files before loading new folder
                     grid.innerHTML = '';
                     addedFiles.clear();
-                    // Automatically add all files from the folder
+                    
+                    // Update path display
+                    currentPathEl.textContent = newPath;
+                    
+                    // Fetch files from new folder and auto-add them
                     await fetchFileList(true);
                 }
             } else {
@@ -160,7 +163,15 @@ document.addEventListener('DOMContentLoaded', () => {
             renderSidebar();
 
             // Auto-add all files if requested (when folder is selected or on first load with existing folder)
-            if (autoAddFiles || (addedFiles.size === 0 && availableFiles.length > 0)) {
+            if (autoAddFiles) {
+                // When explicitly requested (folder selection), add all files
+                availableFiles.forEach(file => {
+                    if (!addedFiles.has(file.name)) {
+                        addToFileGrid(file);
+                    }
+                });
+            } else if (addedFiles.size === 0 && availableFiles.length > 0) {
+                // On first load with existing folder, also add all files
                 availableFiles.forEach(file => {
                     if (!addedFiles.has(file.name)) {
                         addToFileGrid(file);

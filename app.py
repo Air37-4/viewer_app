@@ -65,21 +65,28 @@ def index():
 @app.route('/api/files')
 def list_files():
     files = []
-    for f in os.listdir(BASE_DIR):
-        ext = os.path.splitext(f.lower())[1]
-        if ext in ALLOWED_EXTENSIONS:
-            if ext == '.html':
-                ftype = 'html'
-            elif ext in {'.mp3', '.wav', '.m4a', '.aac', '.flac'}:
-                ftype = 'audio'
-            elif ext in {'.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg', '.bmp', '.ico'}:
-                ftype = 'image'
-            else:
-                ftype = 'video'
-            files.append({
-                'name': f,
-                'type': ftype
-            })
+    try:
+        if not os.path.exists(BASE_DIR):
+            return jsonify(files)
+        for f in os.listdir(BASE_DIR):
+            file_path = os.path.join(BASE_DIR, f)
+            if os.path.isfile(file_path):
+                ext = os.path.splitext(f.lower())[1]
+                if ext in ALLOWED_EXTENSIONS:
+                    if ext == '.html':
+                        ftype = 'html'
+                    elif ext in {'.mp3', '.wav', '.m4a', '.aac', '.flac'}:
+                        ftype = 'audio'
+                    elif ext in {'.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg', '.bmp', '.ico'}:
+                        ftype = 'image'
+                    else:
+                        ftype = 'video'
+                    files.append({
+                        'name': f,
+                        'type': ftype
+                    })
+    except Exception as e:
+        print(f"Error listing files: {e}")
     return jsonify(files)
 
 @app.route('/files/<path:filename>')
