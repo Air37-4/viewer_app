@@ -38,6 +38,8 @@ document.addEventListener('DOMContentLoaded', () => {
             if (window.pywebview && window.pywebview.api) {
                 const newPath = await window.pywebview.api.select_folder();
                 if (newPath) {
+                    console.log('Selected folder:', newPath);
+                    
                     // Clear grid and added files before loading new folder
                     grid.innerHTML = '';
                     addedFiles.clear();
@@ -45,8 +47,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     // Update path display
                     currentPathEl.textContent = newPath;
                     
+                    // Give server a moment to update the folder
+                    await new Promise(resolve => setTimeout(resolve, 200));
+                    
                     // Fetch files from new folder and auto-add them
+                    console.log('Fetching file list...');
                     await fetchFileList(true);
+                    console.log('Files fetched:', availableFiles.length);
                 }
             } else {
                 alert("Эта функция доступна только в приложении");
@@ -156,20 +163,25 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const folderRes = await fetch('/api/folder');
             const folderData = await folderRes.json();
+            console.log('Current folder from server:', folderData.path);
             if (currentPathEl) currentPathEl.textContent = folderData.path;
 
             const filesResponse = await fetch('/api/files');
             availableFiles = await filesResponse.json();
+            console.log('Files received from server:', availableFiles.length, availableFiles);
             renderSidebar();
 
             // Auto-add all files if requested (when folder is selected or on first load with existing folder)
             if (autoAddFiles) {
                 // When explicitly requested (folder selection), add all files
+                console.log('Auto-adding files, count:', availableFiles.length);
                 availableFiles.forEach(file => {
                     if (!addedFiles.has(file.name)) {
+                        console.log('Adding file:', file.name);
                         addToFileGrid(file);
                     }
                 });
+                console.log('Total files added:', addedFiles.size);
             } else if (addedFiles.size === 0 && availableFiles.length > 0) {
                 // On first load with existing folder, also add all files
                 availableFiles.forEach(file => {

@@ -50,11 +50,16 @@ def manage_folder():
     if request.method == 'POST':
         data = request.json
         new_path = data.get('path')
+        print(f"Updating folder to: {new_path}")
         if new_path and os.path.exists(new_path):
+            # Normalize path
+            new_path = os.path.normpath(new_path)
             with open(CONFIG_FILE, "w", encoding="utf-8") as f:
                 f.write(new_path)
             BASE_DIR = new_path
+            print(f"Folder updated successfully to: {BASE_DIR}")
             return jsonify({"status": "success", "path": BASE_DIR})
+        print(f"Invalid path: {new_path}")
         return jsonify({"status": "error", "message": "Invalid path"}), 400
     return jsonify({"path": BASE_DIR})
 
@@ -66,9 +71,13 @@ def index():
 def list_files():
     files = []
     try:
+        print(f"Listing files from: {BASE_DIR}")
         if not os.path.exists(BASE_DIR):
+            print(f"Directory does not exist: {BASE_DIR}")
             return jsonify(files)
-        for f in os.listdir(BASE_DIR):
+        dir_contents = os.listdir(BASE_DIR)
+        print(f"Directory contents: {len(dir_contents)} items")
+        for f in dir_contents:
             file_path = os.path.join(BASE_DIR, f)
             if os.path.isfile(file_path):
                 ext = os.path.splitext(f.lower())[1]
@@ -85,8 +94,11 @@ def list_files():
                         'name': f,
                         'type': ftype
                     })
+        print(f"Returning {len(files)} files")
     except Exception as e:
         print(f"Error listing files: {e}")
+        import traceback
+        traceback.print_exc()
     return jsonify(files)
 
 @app.route('/files/<path:filename>')
